@@ -8,6 +8,7 @@ include:
 
 image: ${UBUNTUIMAGE}:20.04
 variables:
+    GH_NAMESPACE: nanoporetech
     PYENV_VERSION: 3.8.12
 
 .prep-image: &prep-image |
