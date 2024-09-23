@@ -481,12 +481,16 @@ def get_arguments():
                                           help='..., default = None')
 
     # ############################################################################################ #
-    args = parser.parse_args()
-    return args, spectre_help
+    
+    return parser, spectre_help
 
 
-def run_main():
-    spectre_args, spectre_help = get_arguments()
+def run_main(args=None):
+    parser, spectre_help = get_arguments()
+
+    # Parse the arguments, passing `args` if provided, otherwise use the default sys.argv
+    spectre_args = parser.parse_args(args)
+
     command = spectre_args.command
     try:
         run_as_dev = spectre_args.as_dev

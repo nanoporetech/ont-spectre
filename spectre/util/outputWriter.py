@@ -70,7 +70,7 @@ class VCFOutput(object):
             vcf_contigs.append(f'##contig=<ID={contig_name},length={contig_length}>')
         return "\n".join(vcf_contigs)
 
-    def make_vcf_header(self):
+    def make_vcf_header(self, predicted_karyotype):
         population_mode = False
         if self.population_sample_ids:
             if len(self.population_sample_ids) > 1:
@@ -106,6 +106,10 @@ class VCFOutput(object):
                 s = f"##Spectre_sample={','.join(self.population_sample_ids)}"
 
             vcf_header.append(s)
+
+        if predicted_karyotype != "":
+            vcf_header.append(f'##PredictedSexChromosomeKaryotype={predicted_karyotype}')
+            
         return "\n".join(vcf_header)
 
     @staticmethod
@@ -165,7 +169,7 @@ class VCFOutput(object):
                 vcf_lines.append(vcf_line.format_vcf_line())
         return "\n".join(vcf_lines)
 
-    def make_vcf(self, chromosome_list, cnv_candidate_list, sample_id, population_sample_ids=None):
+    def make_vcf(self, chromosome_list, cnv_candidate_list, sample_id, population_sample_ids=None, predicted_karyotype=""):
         # converting population sample ids from set to list
         if not population_sample_ids:
             population_sample_ids = [sample_id]
@@ -173,7 +177,7 @@ class VCFOutput(object):
         self.supp_vec = dict([(i, 0) for i in self.population_sample_ids])
 
         file_handler = open(self.output_vcf, "w") if "gz" not in self.output_vcf else gzip.open(self.output_vcf, "wt")
-        vcf_header = self.make_vcf_header()
+        vcf_header = self.make_vcf_header(predicted_karyotype)
         vcf_sample_header = self.make_vcf_sample_header(self.population_sample_ids)
         vcf_lines = self.vcf_result(chromosome_list, cnv_candidate_list)
         file_handler.write(f'{vcf_header}\n')

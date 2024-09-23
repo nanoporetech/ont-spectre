@@ -115,13 +115,14 @@ class SpectreCNV:
         self.cnv_analysis.get_cnv_metrics(refined_cnvs=True)
 
         # Make output files
-        self.cnv_analysis.karyotype_json()
         self.logger.info("Final candidates are written to spc file")
         self.cnv_analysis.write_intermediate_candidates()
         self.logger.info("Results are writen to bed file")
         self.cnv_analysis.cnv_result_bed()
         self.logger.info("Results are writen to VCF file")
         self.cnv_analysis.cnv_result_vcf()
+        self.logger.info("Writing predicted karyotype")
+        self.cnv_analysis.karyotype_txt()
 
         # End
         self.logger.info(f"Output dir: {self.out_dir}")
