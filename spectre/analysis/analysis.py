@@ -23,6 +23,10 @@ from spectre.util.OSUtil import OSUtil as OSUt
 MOSDEPTH_HEADER = ['chrom_', 'start_', 'end_', 'coverage_']
 MOSDEPTH_DTYPES = [pl.Utf8, pl.Int64, pl.Int64, pl.Float64]
 
+CHR_X_NAMES = {'X', 'chrX'}
+CHR_Y_NAMES = {'Y', 'chrY'}
+CHR_XY_NAMES = CHR_X_NAMES | CHR_Y_NAMES
+
 class CNVAnalysis(object):
     def __init__(self, coverage_file, coverage_mosdepth_data, bin_size, output_directory, outbed, outvcf, genome_info,
                  sample_id, metadata_ref, snv_file, only_chr_list="", ploidy=2,min_cnv_len=1000000, as_dev=False,
@@ -84,11 +88,10 @@ class CNVAnalysis(object):
         self.dist_min_overwrite = 10000  # 10kb
         self.candidate_final_threshold = min_cnv_len #100000  # 100kb
         self.threshhold_quantile = threshhold_quantile
-        self.no_call_lower_threshhold = 0.1 # fraction from genome median which chromosome median is compared to to be skiped
-        self.detect_chr_y_threshhold = 0.1 # fraction from genome median which chromosome median is compared to
-        self.chr_y_q = 0.8 # median seems to be 0 even for males, so need to use quntile
-        self.chr_x_single_flag = False # will be initialized in data_normalization
-        self.chr_y_present_flag = False # will be initialized in data_normalization
+
+        # fraction of genome median coverage which chromosome median is compared to to be skipped (and counted as ploidy=0 in case of X/Y)
+        self.no_call_lower_threshhold = 0.1
+        self.sex_choromosome_ploidies = {} # used for chromosomes with variable ploidies
 
     def genome_median(self):
         return self.coverages_df_diploid['coverage_'].median()
@@ -113,8 +116,9 @@ class CNVAnalysis(object):
         self.logger.info("Parsing VCF to AF freqs file")
         vcf = vcf_parser.VCFSNVParser(self.min_chr_length, self.as_dev)
         vcf_df = pl.from_pandas(vcf.vcf_to_dataframe(self.snv_file))
-        vcf_df = vcf_df.with_columns(pl.col('start_').apply(lambda x: x // self.bin_size * self.bin_size))
-
+        vcf_df = vcf_df.with_columns(
+            (pl.col('start_') // self.bin_size * self.bin_size).alias('start_')
+        )
         af_good_bins_df = self.annotate_bins_df(vcf_df)
 
         coverages_df = pl.read_csv(
@@ -129,22 +133,14 @@ class CNVAnalysis(object):
 
         self.coverages_df_diploid = self.coverages_df.filter(af_good=True)
 
-    def detect_xy_chromosome_proidness(self, genome_median, coverage_lower_threshold):
-        # Detecting chrY has some caverage
-        chr_y_cov = self.coverages_df.filter(chrom_='chrY')['coverage_']
-        if len(chr_y_cov) > 0:
-            self.chr_y_present_flag = chr_y_cov.quantile(self.chr_y_q) > genome_median * self.detect_chr_y_threshhold
-
-            self.logger.debug(f'chrY len: {len(chr_y_cov)}, chrY quantile({self.chr_y_q}): {chr_y_cov.quantile(self.chr_y_q)}')
-            self.logger.debug(f'chrY present flag: {self.chr_y_present_flag}')
-
-        # Detecting chrX has one copy
-        chr_x_cov = self.coverages_df.filter(chrom_='chrX')['coverage_']
-        if len(chr_x_cov) > 0:
-            self.chr_x_single_flag = chr_x_cov.median() < coverage_lower_threshold
-
-            self.logger.debug(f'chrX len: {len(chr_x_cov)}, chrX median: {chr_x_cov.median()}')
-            self.logger.debug(f'Single chrX flag: {self.chr_x_single_flag}')
+    # Can detect poidy for any chromosome, used for X/Y
+    def detect_chromosome_ploidy(self, chr_median_cov_normalized):
+        if chr_median_cov_normalized < self.lower_2n_threshold:
+            return 1
+        elif chr_median_cov_normalized < self.upper_2n_threshold:
+            return 2
+        else:
+            return 3
 
     # TODO: Refactor whole thing using polars
     # Data normalization
@@ -172,8 +168,6 @@ class CNVAnalysis(object):
         self.lower_2n_threshold = coverage_lower_threshold / genome_median * self.ploidy
         self.upper_2n_threshold = coverage_upper_threshold / genome_median * self.ploidy
         self.logger.info(f'Thresholds for normalized coverage, lower: {self.lower_2n_threshold}, upper: {self.upper_2n_threshold} (normalized by median: {genome_median})')
-
-        self.detect_xy_chromosome_proidness(genome_median, coverage_lower_threshold)
 
         for line in coverage_file_handler:
             [chromosome, start, _, coverage] = line.rstrip("\n").split("\t")
@@ -279,8 +273,10 @@ class CNVAnalysis(object):
                 cov_stats.max = np.nanmax(self.coverage)
 
                 # normalization, based on diploid organisms
-                if (self.chr_x_single_flag and chromosome == 'chrX') or (self.chr_y_present_flag and chromosome == 'chrY'):
-                    chr_ploidy = 1
+                if chromosome in CHR_XY_NAMES:
+                    chr_ploidy = 0 if skip_low_cov_chr_flag else self.detect_chromosome_ploidy(med / genome_median * self.ploidy)
+                    self.sex_choromosome_ploidies[chromosome] = chr_ploidy
+                    self.logger.info(f"Predicted number of copies of chromosome {chromosome}: {chr_ploidy}")
                 else:
                     chr_ploidy = self.ploidy
                 normalize_by = genome_median  # med:median | avg:average
@@ -334,13 +330,14 @@ class CNVAnalysis(object):
             self.logger.info(f"Calculating CNVs for {self.sample_id} @ chromosome {each_chromosome}")
             cnv_caller = CNVCall(self.as_dev)
 
-            lower_threshold, upper_threshold = (
-                min(self.lower_2n_threshold / 2, 0.5),
-                max(self.upper_2n_threshold / 2, 1.5)
-            ) if (self.chr_x_single_flag and each_chromosome == 'chrX') or (self.chr_y_present_flag and each_chromosome == 'chrY') else (
-                self.lower_2n_threshold,
-                self.upper_2n_threshold
-            )
+            expected_ploidy = self.sex_choromosome_ploidies.get(each_chromosome, self.ploidy)
+            # expected ploidy 1 is a special case where thresholds can be additionally adjusted
+            if expected_ploidy == 1:
+                lower_threshold = min(self.lower_2n_threshold / 2, 0.5)
+                upper_threshold = max(self.upper_2n_threshold / 2, 1.5)
+            else:
+                lower_threshold = self.lower_2n_threshold * expected_ploidy / self.ploidy
+                upper_threshold = self.upper_2n_threshold * expected_ploidy / self.ploidy
             candidates_cnv_list = cnv_caller.cnv_coverage(self.genome_analysis[each_chromosome]["cov_data"],
                                                           self.bin_size, each_chromosome, self.sample_id,
                                                           lower_threshold, upper_threshold)
@@ -544,16 +541,21 @@ class CNVAnalysis(object):
     def cnv_result_vcf(self, method=""):
         output_vcf = os.path.join(os.path.join(self.output_directory, f'{method}{self.sample_id}.vcf'))
         vcf_output = outputWriter.VCFOutput(output_vcf, self.genome_info)
-        vcf_output.make_vcf(self.genome_analysis.keys(), self.cnv_calls_list, self.sample_id)
 
-    def karyotype_json(self, method=""):
-        output_male_flag = os.path.join(os.path.join(self.output_directory, f'expected_karyotype.json'))
-        karyotype = {
-                'X' : 1 if self.chr_x_single_flag else 2,
-                'Y' : 1 if self.chr_y_present_flag else 0
-                }
-        with open(output_male_flag, 'w') as f:
-            json.dump(karyotype, f)
+        chr_x_copies = sum(self.sex_choromosome_ploidies.get(chr_x_name, 0) for chr_x_name in CHR_X_NAMES)
+        chr_y_copies = sum(self.sex_choromosome_ploidies.get(chr_y_name, 0) for chr_y_name in CHR_Y_NAMES)
+
+        self.predicted_karyotype = 'X' * chr_x_copies + 'Y' * chr_y_copies
+        if self.predicted_karyotype == 'X':
+            self.predicted_karyotype = 'X0'
+        
+        vcf_output.make_vcf(self.genome_analysis.keys(), self.cnv_calls_list, self.sample_id, 
+                            predicted_karyotype=self.predicted_karyotype)
+
+    def karyotype_txt(self):
+        karyotype_output_file = os.path.join(os.path.join(self.output_directory, f'predicted_karyotype.txt'))
+        with open(karyotype_output_file, 'w') as f:
+            f.write(self.predicted_karyotype)
 
     # Plots
     def coverage_plot(self):
