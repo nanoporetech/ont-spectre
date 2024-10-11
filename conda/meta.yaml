@@ -16,8 +16,9 @@ build:
 requirements:
   host:
     - pip
-    - python
+    - python>=3.8
   run:
+    - python>=3.8
     - pysam>=0.22.0
     - numpy>=1.24.3
     - pandas>=2.0.1
@@ -41,4 +42,3 @@ about:
 extra:
   recipe-maintainers:
     - epi2melabs-bot
-

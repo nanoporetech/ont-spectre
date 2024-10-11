@@ -65,7 +65,7 @@ class SpectreCallParam(object):
         self.cov_diff_threshold = user_args.cov_diff_threshold  # 0.80
         self.dist_proportion = user_args.dist_proportion  # 0.25
         self.candidate_final_threshold = user_args.candidate_final_threshold  # 100000  # 100kb
-        self.threshhold_quantile = user_args.threshhold_quantile  # 5
+        self.threshold_quantile = user_args.threshold_quantile  # 5
 
 
 
@@ -116,7 +116,7 @@ def outside_spectre_worker(si: dict):
                                    snv_file_vcf=si["snv_file_vcf"], only_chr_list=si["only_chr_list"],
                                    ploidy=si["ploidy_arg"],min_cnv_len=si["min_cnv_len"], as_dev=si["as_dev"],
                                    dev_params=si["dev_params"], debug_dir=si["debug_dir"], 
-                                   dist_proportion=si["dist_proportion"], threshhold_quantile=si["threshhold_quantile"])
+                                   dist_proportion=si["dist_proportion"], threshold_quantile=si["threshold_quantile"])
     worker.cnv_call()
     return worker.cnv_analysis.intermediate_candidates_file_location
 
@@ -244,7 +244,7 @@ class Spectre:
         self.__set_genome_info(reference)  # genome information
 
         dist_proportion = self.spectre_args.dist_proportion
-        threshhold_quantile = self.spectre_args.threshhold_quantile
+        threshold_quantile = self.spectre_args.threshold_quantile
 
         # Setting up directories
         if not os.path.exists(output_dir):
@@ -266,7 +266,7 @@ class Spectre:
                             "sample_id": sample_id, "snv_file_vcf": snv_file, "only_chr_list": only_chr_list,
                             "ploidy_arg": ploidy_arg, "as_dev": as_dev, "dev_params": self.spectre_args,
                             "debug_dir": self.debug_dir, "min_cnv_len":min_cnv_len, 
-                            "dist_proportion": dist_proportion, "threshhold_quantile": threshhold_quantile}
+                            "dist_proportion": dist_proportion, "threshold_quantile": threshold_quantile}
             spectre_instructions.append(instructions.copy())
 
         # Distribute Samples over cores/threads
@@ -335,7 +335,7 @@ def get_arguments():
                 --metadata     Metadata file for Ns removal or label of available file in package resources: grch38_metadata
             Optional
                 --blacklist    Blacklist in bed format for sites that will be ignored
-                               or label of available blackslists in package resorces: grch38_blacklist_0.3
+                               or label of available blacklists in package resources: grch38_blacklist_0.3
                                (Default = "")
                 --only-chr     Comma separated list of chromosomes to use
                 --ploidy       Set the ploidy for the analysis, useful for sex chromosomes (Default = 2)
@@ -434,8 +434,8 @@ def get_arguments():
     subparser_cnv_caller.add_argument('-07', '--candidate-final-threshold', type=int, required=False,
                                       dest='candidate_final_threshold', default=100000,
                                       help='..., default = 100,000')  # 100kb
-    subparser_cnv_caller.add_argument('-08', '--threshhold-quantile', type=float, required=False,
-                                      dest='threshhold_quantile', default=10,
+    subparser_cnv_caller.add_argument('-08', '--threshold-quantile', type=float, required=False,
+                                      dest='threshold_quantile', default=10,
                                       help='..., default = 10')
 
     # ############################################################################################ #

@@ -75,7 +75,7 @@ class CNVPlot:
         self.main_plot.plot(np.array([1, stats.chromosome_len]), np.array([stats.median, stats.median]),
                             linewidth='1', color="#000000")
         if bounds is not None:
-            [upperb, lowerb] = bounds if len(bounds) == 2 else [np.NaN, np.NaN]
+            [upperb, lowerb] = bounds if len(bounds) == 2 else [np.nan, np.nan]
             self.main_plot.plot(np.array([1, stats.chromosome_len]), np.array([lowerb, lowerb]),
                                 linewidth='1', color="#dd3497")
             self.main_plot.plot(np.array([1, stats.chromosome_len]), np.array([upperb, upperb]),
