@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Karyotype detection for XXX and XYY
 - Output karyotype to .vcf file
+- Numpy >= 2 support
+- Ont-spectre description to README
+
+### Fixed
+- Installation from source instructions
+- threshold_quantile parameter name typo
 
 ## [v0.2.2]
 ### Removed

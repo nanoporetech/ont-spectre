@@ -55,7 +55,9 @@ setup(
     long_description=__long_description__,
     long_description_content_type=__long_description_content_type__,
     zip_safe=False,
+    setup_requires=['wheel'],
     install_requires=install_requires,
+    python_requires=">=3.8",
     packages=find_packages(exclude=("tests",)),
     package_data={
         __pkg_import__:[os.path.join('data', '*')]},

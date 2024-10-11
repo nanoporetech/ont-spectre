@@ -16,11 +16,11 @@ class CNVCall(object):
                      upper_bound: float = None):
         # get chromosome_coverage_data ("self.genome_analysis"), for each chromosome, "cov_data:
         # * .position: list size n
-        #   .coverage_raw = np.NaN
-        #   .positions = np.NaN
-        #   .coverage_log2 = np.NaN         # log2(x)
-        #   .normalized_cov = np.NaN        # x/median
-        # * .normalized_cov_ploidy = np.NaN   # x/median * 2 -> for diploid
+        #   .coverage_raw = np.nan
+        #   .positions = np.nan
+        #   .coverage_log2 = np.nan         # log2(x)
+        #   .normalized_cov = np.nan        # x/median
+        # * .normalized_cov_ploidy = np.nan   # x/median * 2 -> for diploid
         candidate_list = []
         # local
         min_run = 10

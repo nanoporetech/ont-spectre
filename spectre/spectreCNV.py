@@ -9,7 +9,7 @@ class SpectreCNV:
 
     def __init__(self, coverage_dir, bin_size, out_dir, metadata_file_fasta, genome_info, sample_id="",
                  snv_file_vcf="", only_chr_list="", ploidy=2, min_cnv_len=1000000, as_dev=False, dev_params=None,
-                 debug_dir="", dist_proportion=0.25, threshhold_quantile=5):
+                 debug_dir="", dist_proportion=0.25, threshold_quantile=5):
         self.as_dev = as_dev
         # logger
         logger.basicConfig(level=logger.DEBUG) if as_dev else logger.basicConfig(level=logger.INFO)
@@ -37,7 +37,7 @@ class SpectreCNV:
         # self.cnv_analysis = None  # TODO init by using CNVAnalysis
 
         self.dist_proportion = dist_proportion
-        self.threshhold_quantile = threshhold_quantile
+        self.threshold_quantile = threshold_quantile
 
         self.cnv_analysis = CNVAnalysis(coverage_file=self.mosdepth_data.coverage_file,
                                         coverage_mosdepth_data=self.mosdepth_data.mosdepth_summary_data,
@@ -46,7 +46,7 @@ class SpectreCNV:
                                         metadata_ref=self.metadata_reference, snv_file=self.snv_file_vcf,
                                         only_chr_list=self.only_chr_list, ploidy=self.ploidy, min_cnv_len=min_cnv_len,
                                         as_dev=self.as_dev, dev_params=self.dev_params, debug_dir=self.debug_dir,
-                                        dist_proportion=self.dist_proportion, threshhold_quantile=self.threshhold_quantile)
+                                        dist_proportion=self.dist_proportion, threshold_quantile=self.threshold_quantile)
 
     def coverage_dir_files(self, coverage_dir):
         coverage_dir = os.path.abspath(os.path.expanduser(coverage_dir))

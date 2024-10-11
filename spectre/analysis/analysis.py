@@ -30,7 +30,7 @@ CHR_XY_NAMES = CHR_X_NAMES | CHR_Y_NAMES
 class CNVAnalysis(object):
     def __init__(self, coverage_file, coverage_mosdepth_data, bin_size, output_directory, outbed, outvcf, genome_info,
                  sample_id, metadata_ref, snv_file, only_chr_list="", ploidy=2,min_cnv_len=1000000, as_dev=False,
-                 dev_params=None, debug_dir="", dist_proportion=0.25, threshhold_quantile=5):
+                 dev_params=None, debug_dir="", dist_proportion=0.25, threshold_quantile=5):
         # input
         self.coverage_file = coverage_file
         self.mosdepth_data = coverage_mosdepth_data  # has chr_mean_coverage, genome_mean_coverage, genome_bases
@@ -87,10 +87,10 @@ class CNVAnalysis(object):
         self.dist_proportion = dist_proportion # 0.25
         self.dist_min_overwrite = 10000  # 10kb
         self.candidate_final_threshold = min_cnv_len #100000  # 100kb
-        self.threshhold_quantile = threshhold_quantile
+        self.threshold_quantile = threshold_quantile
 
         # fraction of genome median coverage which chromosome median is compared to to be skipped (and counted as ploidy=0 in case of X/Y)
-        self.no_call_lower_threshhold = 0.1
+        self.no_call_lower_threshold = 0.1
         self.sex_choromosome_ploidies = {} # used for chromosomes with variable ploidies
 
     def genome_median(self):
@@ -161,9 +161,9 @@ class CNVAnalysis(object):
         genome_median = self.genome_median()
 
         # Thresholds borders bounds
-        coverage_lower_threshold = self.coverages_df_diploid['coverage_'].quantile(self.threshhold_quantile / 100)
-        coverage_upper_threshold = self.coverages_df_diploid['coverage_'].quantile(1 - self.threshhold_quantile / 100)
-        self.logger.info(f'Thresholds for coverage, lower (Q{self.threshhold_quantile}): {coverage_lower_threshold}, upper(Q{100 - self.threshhold_quantile}): {coverage_upper_threshold}')
+        coverage_lower_threshold = self.coverages_df_diploid['coverage_'].quantile(self.threshold_quantile / 100)
+        coverage_upper_threshold = self.coverages_df_diploid['coverage_'].quantile(1 - self.threshold_quantile / 100)
+        self.logger.info(f'Thresholds for coverage, lower (Q{self.threshold_quantile}): {coverage_lower_threshold}, upper(Q{100 - self.threshold_quantile}): {coverage_upper_threshold}')
 
         self.lower_2n_threshold = coverage_lower_threshold / genome_median * self.ploidy
         self.upper_2n_threshold = coverage_upper_threshold / genome_median * self.ploidy
@@ -184,7 +184,7 @@ class CNVAnalysis(object):
                     # first elem
                     self.positions[list_index] = start
                     self.coverage[list_index] = coverage
-                    self.coverage_log2[list_index] = np.log2(coverage) if coverage != 0 else np.NaN  # use np.nanFUN
+                    self.coverage_log2[list_index] = np.log2(coverage) if coverage != 0 else np.nan  # use np.nanFUN
                     list_index += 1
                 elif previous_chromosome != chromosome:
                     # analysis here
@@ -203,12 +203,12 @@ class CNVAnalysis(object):
                     # first elem
                     self.positions[list_index] = start
                     self.coverage[list_index] = coverage
-                    self.coverage_log2[list_index] = np.log2(coverage) if coverage != 0 else np.NaN  # use np.nanFUN
+                    self.coverage_log2[list_index] = np.log2(coverage) if coverage != 0 else np.nan  # use np.nanFUN
                     list_index += 1
                 else:
                     self.positions[list_index] = start
                     self.coverage[list_index] = coverage
-                    self.coverage_log2[list_index] = np.log2(coverage) if coverage != 0 else np.NaN  # use np.nanFUN
+                    self.coverage_log2[list_index] = np.log2(coverage) if coverage != 0 else np.nan  # use np.nanFUN
                     list_index += 1
         coverage_file_handler.close()
 
@@ -245,13 +245,13 @@ class CNVAnalysis(object):
             # use genome-wide average
             genome_avg_cov = self.mosdepth_data.genome_mean_coverage
             chromosome_med_coverage = np.nanmedian(self.coverage)
-            skip_low_cov_chr_flag = chromosome_med_coverage < genome_median * self.no_call_lower_threshhold
+            skip_low_cov_chr_flag = chromosome_med_coverage < genome_median * self.no_call_lower_threshold
 
             [avg, std] = [float(genome_avg_cov), np.nanstd(self.coverage)]
             for idx in range(0, self.coverage.size, 1):
                 cov = self.coverage[idx]
                 if (cov > (self.max_std_outlier_cn * avg) + (self.max_std_outlier_rm * std)) or skip_low_cov_chr_flag:
-                    self.coverage[idx] = np.NaN
+                    self.coverage[idx] = np.nan
 
             # re-calculate avg, std, median without outliers (right tail)
             [avg, std, med] = [float(genome_avg_cov), np.nanstd(self.coverage), np.nanmedian(self.coverage)]
