@@ -63,8 +63,8 @@ def test_karyotype_prediction(setup_test_environment, sample_dir):
         "--sample-id", "sample",
         "--output-dir", "output_spectre",
         "--reference", "../../GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bgzf.gz",
-        "--metadata", "grch38_metadata",
-        "--blacklist", "grch38_blacklist_0.3"
+        "--metadata", "hg38_metadata",
+        "--blacklist", "hg38_blacklist_v1.0"
     ]
     # Call the main function which should use the mocked arguments and exit with 0
     with pytest.raises(SystemExit) as exc_info:
