@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output karyotype to .vcf file
 - Numpy >= 2 support
 - Ont-spectre description to README
+- Blacklists v1 and metadata for hg19/hg38/chm13 in package resources
 
 ### Fixed
 - Installation from source instructions

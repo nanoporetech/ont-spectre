@@ -332,10 +332,10 @@ def get_arguments():
                 --output-dir   Output directory
                 --reference    Reference sequence used for mapping (for N removal)
             Optional, if missing it will be created
-                --metadata     Metadata file for Ns removal or label of available file in package resources: grch38_metadata
+                --metadata     Metadata file for Ns removal or label of available file in package resources: hg19_metadata, hg38_metadata, chm13v2_metadata
             Optional
                 --blacklist    Blacklist in bed format for sites that will be ignored
-                               or label of available blacklists in package resources: grch38_blacklist_0.3
+                               or label of available blacklists in package resources: hg19_blacklist_v1.0.bed, hg38_blacklist_v1.0, chm13v2_blacklist_v1.0.bed
                                (Default = "")
                 --only-chr     Comma separated list of chromosomes to use
                 --ploidy       Set the ploidy for the analysis, useful for sex chromosomes (Default = 2)

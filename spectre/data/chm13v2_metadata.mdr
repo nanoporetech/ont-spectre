@@ -1,0 +1,6 @@
+#####	Statistic report
+#####	Basepair statistic
+BPDEF	A	T	C	G	GC%	Total bp
+BPSTA	923878813	922993979	633696734	636722544	7667446.906874284	16569
+#####	N-Sequence positions in given reference file
+NSDEF	From	To
