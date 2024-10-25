@@ -4,7 +4,7 @@
 
 [Spectre](https://github.com/fritzsedlazeck/Spectre/tree/main) is a long-read copy number variation (CNV) caller designed to detect large CNVs (>100kb).
 
-**Ont-spectre** is a tool based on the original Spectre, with the following main enhancements:
+**Ont-spectre** is a tool based on the original Spectre v0.2.0, with the following main enhancements:
 * **Diploid Coverage Estimation:** Bins containing heterozygous SNVs are used to estimate the properties of the diploid coverage distribution, aiding in the selection of appropriate parameters.
 * **Karyotype Prediction:** Adds sex chromosome karyotype prediction (including XO, XXY, etc). All events are called relative to the predicted karyotype.
 
