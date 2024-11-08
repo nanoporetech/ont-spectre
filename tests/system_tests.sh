@@ -3,6 +3,7 @@ set -euo pipefail
 
 declare -a data=( 
     "hg002_chr18_realvar"
+    "hg002_chr18_realvar_hg19"
     "hg002_chr19_simulations"
 )
 
@@ -15,7 +16,17 @@ do
     pfx="tests/data/system_tests/$sample/"
     echo "Data path prefix: $pfx"
     
-    # spectre cleanup and run
+    if [[ "$sample" == *"hg19"* ]]; then
+        metadata="hg19_metadata"
+        blacklist="hg19_blacklist_v1.0"
+    else
+        metadata="hg38_metadata"
+        blacklist="hg38_blacklist_v1.0"
+    fi
+
+    echo "Using metadata: $metadata"
+    echo "Using blacklist: $blacklist"
+
     rm -rf $pfx/output_spectre
     spectre CNVCaller \
             --bin-size 1000 \
@@ -24,8 +35,8 @@ do
             --sample-id sample \
             --output-dir $pfx/output_spectre \
             --reference $pfx/input/ref.fna.gz \
-            --metadata $pfx/input/metadata.mdr \
-            --blacklist $pfx/input/blacklist.bed
+            --metadata $metadata \
+            --blacklist $blacklist
 
     # gziping and indexing for truvari input
     vcf_output="$pfx/output_spectre/sample.vcf"
@@ -53,5 +64,3 @@ do
     fi
 
 done
-
-
