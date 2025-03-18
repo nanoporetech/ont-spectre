@@ -61,8 +61,9 @@ class VCFSNVParser(object):
                 if line.__contains__("contig"):
                     # example:  ##contig=<ID=chr1_KI270706v1_random,length=175055>
                     try:
-                        chr_id_len = re.search('.*<ID=(.*),length=(.*)>', line)
-                        [chr_id, chr_len] = [chr_id_len.group(1), int(chr_id_len.group(2))]
+                        # ID regex adapted from VCF 4.5 spec 
+                        chr_id = re.search(r'ID=([\w!#$%&+./:;?@^|~-][\w!#$%&*+./:;=?@^|~-]*)', line).group(1)
+                        chr_len = int(re.search(r'length=(\d+)', line).group(1))
                         if chr_len >= self.min_chromosome_len:
                             use_chromosomes.append(chr_id)
                     except AttributeError:
